@@ -1,16 +1,20 @@
 import os
 
+from altair import JsonDataFormat
 from dotenv import load_dotenv
 
 load_dotenv()
 
+from httpx import request
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import ReadTheDocsLoader
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
+from langchain.schema.document import Document
 
 from consts import INDEX_NAME
-
+import requests
+from typing import List
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 
@@ -37,7 +41,7 @@ def ingest_docs2() -> None:
 
     langchain_documents_base_urls = [
         "https://python.langchain.com/v0.2/docs/integrations/chat/",
-        "https://python.langchain.com/v0.2/docs/integrations/llms/",
+        "https://python.langchain.com/v0.2/docs/integrations/llms/" ,
         "https://python.langchain.com/v0.2/docs/integrations/text_embedding/",
         "https://python.langchain.com/v0.2/docs/integrations/document_loaders/",
         "https://python.langchain.com/v0.2/docs/integrations/document_transformers/",
@@ -70,6 +74,68 @@ def ingest_docs2() -> None:
         )
         print(f"****Loading {url}* to vectorstore done ***")
 
+def retrieve_recipes_freemealAPI()-> List:
+    
+    recipes = []
+    for recipe in ["Arrabiata", "Pizza", "Tacos"]:
 
+        print(f"Retrieving {recipe} recipe...\n")
+
+        endpoint = f"https://www.themealdb.com/api/json/v1/1/search.php?s={recipe}"
+        response = requests.get(endpoint)
+        res = response.json()
+
+        print(f"The recipe for {recipe}  was retrieved\n")
+        recipes.append(res)
+    
+    return recipes
+
+def populate_vectorDB(recipes: List):
+
+    INDEX_NAME = "nmpfit-recipes"
+   
+    documents = [Document(page_content=recipe) for recipe in recipes]
+    # Upsert vectors into Pinecone
+    PineconeVectorStore.from_documents(documents, embeddings, index_name=INDEX_NAME)
+    # Extracting fields
+
+def format_freemeal_recipe(recipe: JsonDataFormat)-> str:
+
+    
+    meal_name = recipe["meals"][0]["strMeal"]
+    instructions = recipe["meals"][0]["strInstructions"]
+
+    ingredients = []
+    i = 1
+    while f"strIngredient{i}" in recipe["meals"][0] and recipe["meals"][0][f"strIngredient{i}"] != '':
+
+        ingredient = recipe["meals"][0][f"strIngredient{i}"]
+
+        measure = recipe["meals"][0][f"strMeasure{i}"]
+       
+        ingredients.append(f"- {ingredient}: {measure}")
+        i += 1
+
+        # Formatting the recipe with all ingredients
+    formatted_recipe = f"""
+        Recipe: {meal_name}
+
+        Instructions:
+        {instructions}
+
+        Ingredients:
+        {chr(10).join(ingredients)}
+        """
+    return formatted_recipe
+        
+    
+                
 if __name__ == "__main__":
-    ingest_docs2()
+
+    print("Hello nmpFit\n")
+    recipes = retrieve_recipes_freemealAPI()
+    formattes_recipes = [format_freemeal_recipe(recipe) for recipe in recipes]
+    populate_vectorDB(formattes_recipes)
+    
+    print("Ingested all Recipes...\n")
+    print("Ending")

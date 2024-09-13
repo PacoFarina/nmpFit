@@ -77,7 +77,7 @@ with st.sidebar:
     st.write(f"**Name:** {user_name}")
     st.write(f"**Email:** {user_email}")
 
-st.header("LangChain🦜🔗 Udemy Course- Helper Bot")
+st.header("nmpFit - Search for a recipe")
 
 # Initialize session state
 if "chat_answers_history" not in st.session_state:
@@ -101,9 +101,12 @@ if prompt:
             query=prompt, chat_history=st.session_state["chat_history"]
         )
 
-        sources = set(doc.metadata["source"] for doc in generated_response["context"])
+        # sources = set(doc.metadata["source"] for doc in generated_response["context"])
+        # formatted_response = (
+        #     f"{generated_response['answer']} \n\n {create_sources_string(sources)}"
+        # )
         formatted_response = (
-            f"{generated_response['answer']} \n\n {create_sources_string(sources)}"
+            f"{generated_response['answer']} "
         )
 
         st.session_state["user_prompt_history"].append(prompt)
