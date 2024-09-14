@@ -37,6 +37,8 @@ def ingest_docs():
 
 
 def ingest_docs2() -> None:
+    """_summary_
+    """
     from langchain_community.document_loaders import FireCrawlLoader
 
     langchain_documents_base_urls = [
@@ -74,7 +76,12 @@ def ingest_docs2() -> None:
         )
         print(f"****Loading {url}* to vectorstore done ***")
 
-def retrieve_recipes_freemealAPI()-> List:
+def retrieve_recipes_freemealAPI()-> List[JsonDataFormat]:
+    """calls the FreemealAPI to retrieve recipes given a serch argument
+
+    Returns:
+        List[JsonDataFormat]: list of recipes in json format
+    """
     
     recipes = []
     for recipe in ["Arrabiata", "Pizza", "Tacos"]:
@@ -90,7 +97,12 @@ def retrieve_recipes_freemealAPI()-> List:
     
     return recipes
 
-def populate_vectorDB(recipes: List):
+def populate_vectorDB(recipes: List[str]):
+    """Takes a list of recipes and populates a pinecone vector database
+
+    Args:
+        recipes (List[str]): list of recipes in string format 
+    """
 
     INDEX_NAME = "nmpfit-recipes"
    
@@ -100,8 +112,12 @@ def populate_vectorDB(recipes: List):
     # Extracting fields
 
 def format_freemeal_recipe(recipe: JsonDataFormat)-> str:
+    """Takes a recipe in Json format retrieved from the FreeMealAPI and formats it in natural text
 
-    
+    Args:
+        recipe (JsonDataFormat): FreeMealAPI recipe in json format 
+    """
+
     meal_name = recipe["meals"][0]["strMeal"]
     instructions = recipe["meals"][0]["strInstructions"]
 
@@ -125,7 +141,7 @@ def format_freemeal_recipe(recipe: JsonDataFormat)-> str:
 
         Ingredients:
         {chr(10).join(ingredients)}
-        """
+    """
     return formatted_recipe
         
     
